@@ -20,7 +20,7 @@ async def main():
         # Add the user's input message to the message list, with the role 'user'
         messages.append({'role': 'user', 'content': input_text})
 
-        async with AsyncClient(timeout=30) as client:
+        async with AsyncClient(timeout=5) as client:
             response = await client.post(url=url, json=messages)
             # If the server response status code is 200, it means the request is successful.
             if response.status_code == 200:
@@ -30,7 +30,7 @@ async def main():
                 # Keep a complete record of the conversation
                 messages.append(response.json())
             else:
-                print("Request failed, status code:" + str(response.status_code))
+                print(f"Request failed, status code: {response.status_code}, 'message': {response.text}")
 
 
 if __name__ == '__main__':

@@ -1,4 +1,5 @@
 import json
+import time
 from typing import Union, Dict, AsyncIterable, Any
 from httpx import AsyncClient
 
@@ -57,7 +58,7 @@ async def http_request(url: str, headers: Dict[str, str], params: Union[str, Dic
     Return example:
         {'role': 'assistant', 'content': '我是来自阿里云的大规模语言模型'}
     """
-    async with AsyncClient(timeout=30) as client:
+    async with AsyncClient(timeout=60) as client:
         response = await client.post(url=url, headers=headers, json=params)
         return response.json().get("choices")[0].get("message")
 

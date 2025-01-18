@@ -1,13 +1,8 @@
-import asyncio
-import json
 import logging
-import os
 from collections import defaultdict
 from typing import List
-
-import httpx
+import os
 from dotenv import load_dotenv
-from openai import OpenAI
 from fastapi import FastAPI, WebSocket, APIRouter, Body
 from starlette.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocketDisconnect
