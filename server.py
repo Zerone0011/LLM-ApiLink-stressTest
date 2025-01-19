@@ -50,7 +50,7 @@ async def websocket_chat(websocket: WebSocket):
 
         while True:
             input_text = await websocket.receive_text()
-            # Add the client's message to the chat history
+            # Add the Client's message to the chat history
             messages.append({"role": "user", "content": input_text})
 
             # If the user sends "quit", close the WebSocket connection
@@ -90,7 +90,7 @@ async def websocket_chat(websocket: WebSocket):
 
 '''
 HTTP requests are short-lived, so we can’t write a while True loop like we do with websocker. 
-Therefore, the function of saving historical data needs to be implemented on the client side.
+Therefore, the function of saving historical data needs to be implemented on the Client side.
 '''
 @app.post("/chat")
 async def chat(messages: List[Dict[str, str]] = Body(...)):

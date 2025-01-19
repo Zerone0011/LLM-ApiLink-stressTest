@@ -56,7 +56,7 @@ class BenchMarkRunner:
 
     Methods:
     - run: Manages the creation and execution of worker tasks to process the requests.
-    - worker: Processes individual requests from the request queue and sends them using an HTTP client.
+    - worker: Processes individual requests from the request queue and sends them using an HTTP Client.
     """
     def __init__(
         self,
@@ -121,7 +121,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description="HTTP POST stress test with non-concurrent.")
     parser.add_argument('--url', type=str, default='http://127.0.0.1:8080/chat', help='The url of the server')
-    parser.add_argument('--dataset_path', type=str, default='./ShareGPT_V3_unfiltered_cleaned_split_no_imsorry.json',
+    parser.add_argument('--dataset_path', type=str, default='./Dataset/ShareGPT_V3_unfiltered_cleaned_split_no_imsorry.json',
                         help='Dataset path of stress test')
     parser.add_argument('--tokenizer_path', type=str, default='./Qwen1.5-0.5B-Chat',
                         help='Tokenizer path used for tokenizing the input requests')
