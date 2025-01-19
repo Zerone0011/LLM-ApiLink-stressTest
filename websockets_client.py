@@ -1,8 +1,17 @@
+# -*- coding: utf-8 -*-
+# @Time    : 18/1/2025 18:00
+# @Author  : Zerone
+# @File    : websockets_client.py
+# @IDE     ：PyCharm
+# @Description：
+
 import asyncio
+import random
+
 import websockets
 
 
-async def chat():
+async def chat(natural_typing_speed: bool = True):
     # ws:// indicates the use of the WebSocket protocol,
     # 127.0.0.1 indicates the local address,
     # 8080 is the port number, and /chat is the path
@@ -34,9 +43,13 @@ async def chat():
                     else:
                         # end='' means no line break,
                         # flush=True ensures that the output is flushed to the console immediately
-                        print(response, end='', flush=True)
+                        # print(response, end='', flush=True)
+                        for char in response:
+                            print(char, end='', flush=True)
+                            if natural_typing_speed:
+                                await asyncio.sleep(random.uniform(0.03, 0.1))  # Simulate natural typing speed
         except websockets.exceptions.ConnectionClosed:
             print("The connection is closed.")
 
 if __name__ == "__main__":
-    asyncio.run(chat())
+    asyncio.run(chat(natural_typing_speed=False))
