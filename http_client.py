@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+# @Time    : 18/1/2025 18:00
+# @Author  : Zerone
+# @File    : http_client.py
+# @IDE     ：PyCharm
+# @Description：
+
 from httpx import AsyncClient
 import asyncio
 
