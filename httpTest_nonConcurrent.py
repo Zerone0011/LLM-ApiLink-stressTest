@@ -13,7 +13,7 @@ from utils_loadingDataset import sample_requests, get_tokenizer
 from httpx import AsyncClient
 
 
-# 测试的是本地的http server
+# The test is a local http server
 async def send_request(http_client: AsyncClient,
                        url: str,
                        messages: List[Dict[str, Any]],
@@ -42,8 +42,10 @@ async def send_request(http_client: AsyncClient,
     else:
         return {'error': response.status_code, 'message': response.text}
 
+
 async def benchmark(
-    input_requests: List[Tuple[str, int, int]],
+        url: str,
+        input_requests: List[Tuple[str, int, int]],
 ) -> None:
     """
     Benchmarks the HTTP POST requests to the specified URL with the given input requests.
@@ -71,38 +73,41 @@ if __name__ == '__main__':
     import logging
     import asyncio
     import numpy as np
+    import argparse
+
+    parser = argparse.ArgumentParser(description="HTTP POST stress test with non-concurrent.")
+    parser.add_argument('--url', type=str, default='http://127.0.0.1:8080/chat', help='The url of the server')
+    parser.add_argument('--dataset_path', type=str, default='./ShareGPT_V3_unfiltered_cleaned_split_no_imsorry.json',
+                        help='Dataset path of stress test')
+    parser.add_argument('--tokenizer_path', type=str, default='./Qwen1.5-0.5B-Chat',
+                        help='Tokenizer path used for tokenizing the input requests')
+    parser.add_argument('--num_request', type=int, default=10, help='The number of requests to be sent')
+    args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-    REQUEST_LATENCY: List[Tuple[int, int, float]] = [] # Tuple[prompt_len, output_len, latency]
+    REQUEST_LATENCY: List[Tuple[int, int, float]] = []  # Tuple[prompt_len, output_len, latency], global variable
 
-    url = "http://127.0.0.1:8080/chat"
-    dataset_path = r'./ShareGPT_V3_unfiltered_cleaned_split_no_imsorry.json'
+    # Prepare for the testing dataset
     logging.info("Preparing for Sequential non-concurrent http post.")
-
-    tokenizer_name_or_path = './Qwen1.5-0.5B-Chat'
-    num_request = 10
-
-    tokenizer = get_tokenizer(tokenizer_name_or_path)
-
-    # Sample some requests from the dataset
-    input_requests = sample_requests(dataset_path, num_request, tokenizer)
+    tokenizer = get_tokenizer(args.tokenizer_path)
+    input_requests = sample_requests(args.dataset_path, args.num_request, tokenizer)
     print(f'A example of input request: {input_requests[0]}')
 
+    # Start the testing
     logging.info("Sequential non-concurrent http post starts.")
-
     start_time = time.time()
-    asyncio.run(benchmark(input_requests))
+    asyncio.run(benchmark(url=args.url, input_requests=input_requests))
     end_time = time.time()
 
+    # print the final test result
     total_test_time = end_time - start_time
     print(f"Total test time: {total_test_time:.2f} s")
 
-    # Calculate the request throughput per second
-    print(f"Throughput: {len(REQUEST_LATENCY) / total_test_time:.2f} requests/s")
+    print(
+        f"Throughput: {len(REQUEST_LATENCY) / total_test_time:.2f} requests/s")  # Calculate the request throughput per second
 
-    # Average request latency
     avg_latency = np.mean([latency for _, _, latency in REQUEST_LATENCY])
-    print(f"Average latency: {avg_latency:.2f} s")
+    print(f"Average latency: {avg_latency:.2f} s")  # Average request latency
 
     # Calculate the average latency per token (including prompt tokens and generated tokens)
     # avg_per_token_latency = np.mean(

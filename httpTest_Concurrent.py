@@ -4,7 +4,7 @@
 # @File    : httpTest_Concurrent.py
 # @IDE     ：PyCharm 
 # @Description：
-import asyncio
+
 import json
 import time
 from typing import List, Dict, Any, Tuple
@@ -13,7 +13,6 @@ from aiohttp import ClientSession
 
 from utils_loadingDataset import sample_requests, get_tokenizer
 import aiohttp
-from httpx import AsyncClient
 
 
 async def send_request(http_client: ClientSession,
@@ -61,9 +60,11 @@ class BenchMarkRunner:
     """
     def __init__(
         self,
+        url: str,
         requests: List[Tuple[str, int, int]],  # prompt, prompt_len, output_len
         concurrency: int,
     ):
+        self.url = url
         self.concurrency = concurrency
         self.requests = requests
         self.request_left = len(requests)   # Initialize the number of remaining requests
@@ -104,10 +105,10 @@ class BenchMarkRunner:
                 prompt, prompt_len, completion_len = await self.request_queue.get() # Get a request from the request queue
                 messages.append({'role': 'user', 'content': prompt})
 
-                if prompt == '&&&No_more_tasks&&&':  # If a termination signal is received, the task ends
+                if prompt == '&&&No_more_tasks&&&':  # If a termination signal is received, the worker task completed
                     break
 
-                response = await send_request(http_client=session, url=url, messages=messages, prompt_len=prompt_len)
+                response = await send_request(http_client=session, url=self.url, messages=messages, prompt_len=prompt_len)
 
                 self.request_left -= 1
                 print(f"Response {len(self.requests) - self.request_left}: {json.dumps(response, ensure_ascii=False, indent=2)}")
@@ -116,39 +117,41 @@ if __name__ == '__main__':
     import logging
     import asyncio
     import numpy as np
+    import argparse
+
+    parser = argparse.ArgumentParser(description="HTTP POST stress test with non-concurrent.")
+    parser.add_argument('--url', type=str, default='http://127.0.0.1:8080/chat', help='The url of the server')
+    parser.add_argument('--dataset_path', type=str, default='./ShareGPT_V3_unfiltered_cleaned_split_no_imsorry.json',
+                        help='Dataset path of stress test')
+    parser.add_argument('--tokenizer_path', type=str, default='./Qwen1.5-0.5B-Chat',
+                        help='Tokenizer path used for tokenizing the input requests')
+    parser.add_argument('--num_request', type=int, default=10, help='The number of requests to be sent')
+    parser.add_argument('--concurrency', type=int, default=5, help='The number of concurrent requests to be handled')
+    args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-    REQUEST_LATENCY: List[Tuple[int, int, float]] = []  # Tuple[prompt_len, output_len, latency]
+    REQUEST_LATENCY: List[Tuple[int, int, float]] = []  # Tuple[prompt_len, output_len, latency], global variable
 
-    url = "http://127.0.0.1:8080/chat"
-    dataset_path = r'./ShareGPT_V3_unfiltered_cleaned_split_no_imsorry.json'
+    # Prepare for the testing dataset
     logging.info("Preparing for concurrent http post.")
-
-    tokenizer_name_or_path = './Qwen1.5-0.5B-Chat'
-    num_request = 10
-    concurrency = 5
-
-    tokenizer = get_tokenizer(tokenizer_name_or_path)
-
-    # Sample some requests from the dataset
-    input_requests = sample_requests(dataset_path, num_request, tokenizer)
+    tokenizer = get_tokenizer(args.tokenizer_path)
+    input_requests = sample_requests(args.dataset_path, args.num_request, tokenizer)
     print(f'A example of input request: {input_requests[0]}')
 
+    # Start the testing
     logging.info("Concurrent http post starts.")
-
     start_time = time.time()
-    asyncio.run(BenchMarkRunner(input_requests, concurrency).run())
+    asyncio.run(BenchMarkRunner(url=args.url, requests=input_requests, concurrency=args.concurrency).run())
     end_time = time.time()
 
+    # print the final test result
     total_test_time = end_time - start_time
     print(f"Total test time: {total_test_time:.2f} s")
 
-    # Calculate the request throughput per second
-    print(f"Throughput: {len(REQUEST_LATENCY) / total_test_time:.2f} requests/s")
+    print(f"Throughput: {len(REQUEST_LATENCY) / total_test_time:.2f} requests/s")   # Calculate the request throughput per second
 
-    # Average request latency
     avg_latency = np.mean([latency for _, _, latency in REQUEST_LATENCY])
-    print(f"Average latency: {avg_latency:.2f} s")
+    print(f"Average latency: {avg_latency:.2f} s")  # Average request latency
 
     # Calculate the average latency per token (including prompt tokens and generated tokens)
     # avg_per_token_latency = np.mean(
