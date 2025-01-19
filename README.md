@@ -7,7 +7,6 @@ This project is a simple demonstration of how to **deploy the LLM API Link local
     # you can easily install required python library by running the following command
     pip install -r requirements.txt
     ```
-
 ## Pre-requisite
 ### 1. Remote LLM API Link
 - You need to have a remote LLM **API key**. I used Alibaba Cloud (bailian) LLM API Link for this demonstration. 
